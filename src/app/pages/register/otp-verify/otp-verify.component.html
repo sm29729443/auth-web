@@ -1,0 +1,129 @@
+<!-- OTP 驗證頁面 -->
+<div class="w-full max-w-2xl mx-auto space-y-6">
+
+    <!-- 資料確認區塊 -->
+    <mat-card class="info-summary">
+        <mat-card-header>
+            <mat-card-title class="text-center w-full">確認您的資料</mat-card-title>
+            <mat-card-subtitle class="text-center w-full">
+                請確認以下資料是否正確，然後輸入驗證碼
+            </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+            <div class="bg-gray-50 p-6 rounded-lg space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 姓名 -->
+                    <div class="info-item">
+                        <label class="text-sm font-medium text-gray-600">姓名</label>
+                        <p class="text-lg font-semibold text-gray-900">{{ getRegistrationData().name }}</p>
+                    </div>
+
+                    <!-- 身份證字號 -->
+                    <div class="info-item">
+                        <label class="text-sm font-medium text-gray-600">身份證字號</label>
+                        <p class="text-lg font-semibold text-gray-900">{{ getMaskedIdNumber() }}</p>
+                    </div>
+
+                    <!-- 手機號碼 -->
+                    <div class="info-item">
+                        <label class="text-sm font-medium text-gray-600">手機號碼</label>
+                        <p class="text-lg font-semibold text-gray-900">{{ getRegistrationData().phone }}</p>
+                    </div>
+
+                    <!-- 電子信箱 -->
+                    <div class="info-item">
+                        <label class="text-sm font-medium text-gray-600">電子信箱</label>
+                        <p class="text-lg font-semibold text-gray-900">{{ getRegistrationData().email }}</p>
+                    </div>
+
+
+
+                    <!-- 修改按鈕 -->
+                    <div class="flex justify-end mt-4">
+                        <button mat-text-button color="primary" type="button" [disabled]="authService.isLoading()">
+                            <mat-icon>edit</mat-icon>
+                            <span class="ml-1">修改資料</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </mat-card-content>
+    </mat-card>
+
+    <!-- OTP 驗證區塊 -->
+    <mat-card class="otp-verification">
+        <mat-card-header>
+            <mat-card-title class="text-center w-full">驗證身份</mat-card-title>
+            <mat-card-subtitle class="text-center w-full">
+                我們已發送驗證碼到您的手機和信箱，請輸入收到的驗證碼
+            </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content class="space-y-6">
+            <!-- 顯示發送目標 -->
+            <div class="bg-blue-50 p-4 rounded-lg">
+                <div class="flex items-center space-x-2">
+                    <mat-icon class="text-blue-600">info</mat-icon>
+                    <div class="text-sm text-blue-800">
+                        <p>驗證碼已發送至：</p>
+                        <p>📱 手機：{{ getMaskedPhone() }}</p>
+                        <p>📧 信箱：{{ getMaskedEmail() }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OTP 輸入表單 -->
+            <form [formGroup]="otpForm" class="space-y-6">
+                <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>驗證碼</mat-label>
+                    <input matInput formControlName="otp" placeholder="請輸入 6 位數驗證碼" maxlength="6"
+                        class="text-center text-xl tracking-widest" autocomplete="one-time-code">
+                    <mat-icon matSuffix>enhanced_encryption</mat-icon>
+                    @if (otpForm.get('otp')?.invalid && otpForm.get('otp')?.touched) {
+                    <mat-error>
+                        @if (otpForm.get('otp')?.errors?.['required']) {
+                        請輸入驗證碼
+                        }
+                        @if (otpForm.get('otp')?.errors?.['pattern']) {
+                        驗證碼必須是 6 位數字
+                        }
+                    </mat-error>
+                    }
+                </mat-form-field>
+
+                <!-- 倒數計時器 -->
+                <div class="text-center text-sm text-gray-600">
+                    @if (countdown() > 0) {
+                    <p class="countdown-text">{{ countdown() }} 秒後可重新發送驗證碼</p>
+                    } @else {
+                    <button mat-text-button color="primary" type="button" (click)="resendOtp()"
+                        [disabled]="authService.isLoading()">
+                        重新發送驗證碼
+                    </button>
+                    }
+                </div>
+            </form>
+        </mat-card-content>
+
+        <mat-card-actions class="flex justify-between p-4">
+            <button mat-stroked-button type="button" [disabled]="authService.isLoading()">
+                <mat-icon>arrow_back</mat-icon>
+                <span class="ml-1">返回上一步</span>
+            </button>
+
+            <button mat-raised-button color="primary" type="button"
+                [disabled]="otpForm.invalid || authService.isLoading()">
+                @if (authService.isLoading()) {
+                <span class="flex items-center">
+                    <mat-icon class="animate-spin mr-2">refresh</mat-icon>
+                    驗證中...
+                </span>
+                } @else {
+                確認並完成註冊
+                }
+            </button>
+        </mat-card-actions>
+    </mat-card>
+
+</div>

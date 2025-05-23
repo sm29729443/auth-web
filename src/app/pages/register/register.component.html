@@ -1,0 +1,45 @@
+<div class="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl w-full space-y-8">
+    <!-- 頁面標題 -->
+    <div class="text-center">
+      <h1 class="mt-6 text-3xl font-extrabold text-gray-900">
+        會員註冊
+      </h1>
+    </div>
+    <!-- 步驟指示器 -->
+    <div class="flex justify-center">
+      <div class="flex space-x-4">
+        @for (step of steps; track step.key) {
+        <div class="flex items-center">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+            [class]="getStepClasses(step.key)">
+            {{ step.number }}
+          </div>
+          @if (!$last) {
+          <div class="w-8 h-0.5 mx-2" [class]="isStepCompleted(step.key) ? 'bg-blue-500' : 'bg-gray-300'">
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- 載入指示器 -->
+    @if (authService.isLoading()) {
+    <div class="flex justify-center">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+    }
+    <!-- 根據當前步驟顯示對應組件 -->
+    <div class="space-y-6">
+      @switch (authService.currentStep()) {
+      @case ('form') {
+      <app-register-form />
+      }
+      @case ('otp') {
+      <app-otp-verify />
+      }
+      }
+    </div>
+  </div>
+</div>

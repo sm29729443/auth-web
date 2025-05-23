@@ -1,0 +1,59 @@
+/* 基本佈局 */
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 頂部導航欄 */
+.app-header {
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+/* 主內容區域 */
+.app-content {
+  flex: 1;
+  background-color: #f9fafb;
+}
+
+/* 共享容器樣式 */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 啟用 Material 組件的樣式優化 */
+.mat-mdc-form-field {
+  font-family: inherit;
+}
+
+/* 響應式設計調整 */
+@media (max-width: 768px) {
+  .app-content .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* 確保路由出口能夠正確顯示 Angular Animation */
+router-outlet + * {
+  display: block;
+  animation: fade-in 0.3s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

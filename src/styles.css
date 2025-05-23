@@ -1,1 +1,25 @@
 /* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+/* Angular Material 表單圓角樣式 */
+.mat-mdc-form-field.mat-form-field-appearance-outline .mdc-notched-outline .mdc-notched-outline__leading {
+  border-radius: 8px 0 0 8px !important;
+}
+
+.mat-mdc-form-field.mat-form-field-appearance-outline .mdc-notched-outline .mdc-notched-outline__trailing {
+  border-radius: 0 8px 8px 0 !important;
+}
+
+/* 修正必填星號樣式 */
+.mat-mdc-form-field .mat-mdc-form-field-required-marker {
+  margin-left: 4px !important;
+  color: #ef4444 !important;
+}
+
+/* 確保星號不與邊框重疊 */
+.mat-mdc-form-field .mat-mdc-floating-label {
+  padding-right: 8px;
+}
