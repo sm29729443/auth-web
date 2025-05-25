@@ -1,0 +1,37 @@
+/* 所有樣式已改用 Tailwind CSS utility classes */
+/* 如需自訂樣式，請在此處添加 */
+
+/* 確保 Tailwind 的 focus 樣式正常工作 */
+input:focus,
+select:focus,
+button:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+/* 自訂動畫擴展（Tailwind 可能沒有的） */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* 確保動畫在 reduced-motion 偏好下被禁用 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin,
+  .animate-pulse,
+  .animate-shake {
+    animation: none;
+  }
+  
+  .transition-all,
+  .transition-colors,
+  .transition-opacity,
+  .transition-transform {
+    transition-duration: 0.01ms !important;
+  }
+}
