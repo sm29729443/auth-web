@@ -1,0 +1,30 @@
+  /**
+   * 進入下一步驟 - 發送 OTP
+   */
+  nextStep(): void {
+    this.isFormSubmitted = true;
+
+    if (this.registerForm.valid) {
+      // 暫時使用原生確認框
+      this.showPhoneConfirmation();
+    } else {
+      this.markFormGroupTouched(this.registerForm);
+    }
+  }
+
+  /**
+   * 顯示手機號碼確認（原生版本）
+   */
+  private showPhoneConfirmation(): void {
+    const phoneNumber = this.registerForm.get('phoneNumber')?.value;
+    const lastThreeDigits = phoneNumber.substring(phoneNumber.length - 3);
+    
+    const confirmed = confirm(
+      `請確認您的手機號碼末三碼是否正確：${lastThreeDigits}\n\n點擊「確定」繼續註冊，點擊「取消」修改手機號碼。`
+    );
+    
+    if (confirmed) {
+      this.proceedWithRegistration();
+    }
+    // 如果取消，什麼都不做，讓用戶修改手機號
+  }

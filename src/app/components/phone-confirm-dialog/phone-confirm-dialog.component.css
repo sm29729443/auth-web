@@ -1,0 +1,20 @@
+/* 自訂 Material Dialog 樣式 */
+:host ::ng-deep .mat-mdc-dialog-container {
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* 確保 Material 按鈕與 Tailwind 配合良好 */
+:host ::ng-deep .mat-mdc-button {
+  border-radius: 8px;
+  text-transform: none;
+  font-weight: 500;
+}
+
+/* Material Icon 調整 */
+:host ::ng-deep mat-icon {
+  font-size: inherit;
+  width: auto;
+  height: auto;
+}

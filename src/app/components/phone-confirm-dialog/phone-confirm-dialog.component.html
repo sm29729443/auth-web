@@ -1,0 +1,42 @@
+<div class="w-full max-w-md mx-auto">
+  <!-- 對話框標題 -->
+  <div class="flex items-center gap-3 mb-6">
+    <mat-icon class="text-blue-500 text-2xl">phone</mat-icon>
+    <h2 mat-dialog-title class="text-xl font-semibold text-gray-800 m-0">確認手機號碼</h2>
+  </div>
+  
+  <!-- 對話框內容 -->
+  <mat-dialog-content class="text-center py-4">
+    <p class="text-gray-600 mb-4 text-sm">
+      請確認您的手機號碼末三碼是否正確：
+    </p>
+    
+    <div class="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 mb-6">
+      <div class="text-lg font-mono tracking-wide">
+        <span class="text-gray-400">{{ getPhonePrefix() }}</span>
+        <span class="text-blue-600 font-bold text-xl">{{ getPhoneSuffix() }}</span>
+      </div>
+    </div>
+  </mat-dialog-content>
+  
+  <!-- 對話框按鈕 -->
+  <mat-dialog-actions class="flex justify-between gap-3 pt-4">
+    <button 
+      mat-stroked-button 
+      color="primary"
+      class="flex-1 py-3 font-medium"
+      (click)="onCancel()">
+      <mat-icon class="mr-2">edit</mat-icon>
+      修改
+    </button>
+    
+    <button 
+      mat-raised-button 
+      color="primary"
+      class="flex-1 py-3 font-medium"
+      (click)="onConfirm()">
+      <mat-icon class="mr-2">check</mat-icon>
+      確認無誤
+    </button>
+  </mat-dialog-actions>
+</div>

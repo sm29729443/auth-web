@@ -19,7 +19,7 @@ import {
 export class RegisterService {
 
   /** API 基礎 URL */
-  private readonly apiUrl = 'http://localhost:8080/auth/api';
+  private readonly apiUrl = 'http://localhost:8080/b2c-auth-api/api';
 
   constructor(private http: HttpClient) { }
 
@@ -64,7 +64,7 @@ export class RegisterService {
 
     // 模擬 OTP 驗證邏輯
     const isValidOtp = otpData.otpCode === '123456'; // 模擬驗證碼
-
+    console.log('確認驗證資訊:', formData, otpData);
     if (!isValidOtp) {
       const errorResponse: ApiResponse<VerifyOtpResponse> = {
         success: false,
@@ -181,7 +181,7 @@ export class RegisterService {
    * @returns Observable<ApiResponse<string[]>>
    */
   getDistricts(cityName: string): Observable<ApiResponse<string[]>> {
-    return this.http.get<ApiResponse<string[]>>(`${this.apiUrl}/districts`, {
+    return this.http.get<ApiResponse<string[]>>(`${this.apiUrl}/public/address/districts`, {
       params: { city: cityName }
     });
 

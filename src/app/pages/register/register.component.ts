@@ -3,10 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 
 import { RegisterService } from '../../services/register.service';
 import { RegisterFormData, OtpVerifyData } from '../../models/register.model';
 import { CustomValidators } from '../../validators/custom-validators';
+import { PhoneConfirmDialogComponent } from '../../components/phone-confirm-dialog/phone-confirm-dialog.component';
 
 /**
  * 註冊主組件 - 包含兩個步驟：基本資料輸入和 OTP 驗證
@@ -92,8 +94,9 @@ export class RegisterComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private registerService: RegisterService,
-    public router: Router, // 加上 public 讓模板可以訪問
-    private route: ActivatedRoute
+    public router: Router,
+    private route: ActivatedRoute,
+    private dialog: MatDialog  // 加入 MatDialog
   ) {
     this.initializeDateOptions();
   }
@@ -225,55 +228,65 @@ export class RegisterComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * 當城市改變時，更新區域選項
-   */
-  // onCityChange(): void {
-  //   const city = this.registerForm.get('address.city')?.value;
-  //   if (city) {
-  //     // 重置區域選擇
-  //     this.registerForm.get('address.district')?.setValue('');
-  //   }
-  // }
-
-  /**
-   * 取得目前選擇城市的區域列表
-   */
-  // getCurrentDistricts(): string[] {
-  //   const city = this.registerForm.get('address.city')?.value;
-  //   return this.districts[city] || [];
-  // }
-
-  /**
    * 進入下一步驟 - 發送 OTP
    */
   nextStep(): void {
-    this.isFormSubmitted = true; // 標記表單已提交
+    this.isFormSubmitted = true;
 
     if (this.registerForm.valid) {
-      this.isLoading = true;
-      this.errorMessage = '';
-
-      const formData: RegisterFormData = this.registerForm.value;
-
-      this.registerService.sendRegistrationData(formData)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (response) => {
-            this.isLoading = false;
-            if (response.success && response.data) {
-              this.currentStep = 2;
-              this.successMessage = response.message;
-              this.startOtpCountdown(response.data.countdown);
-            }
-          },
-          error: (error) => {
-            this.isLoading = false;
-            this.errorMessage = error.message || '發送驗證碼失敗，請稍後再試';
-          }
-        });
+      // 先開啟確認對話框
+      this.openPhoneConfirmDialog();
     } else {
       this.markFormGroupTouched(this.registerForm);
     }
+  }
+
+  /**
+   * 開啟手機號碼確認對話框
+   */
+  private openPhoneConfirmDialog(): void {
+    const phoneNumber = this.registerForm.get('phoneNumber')?.value;
+
+    const dialogRef = this.dialog.open(PhoneConfirmDialogComponent, {
+      width: '400px',
+      disableClose: true,
+      data: { phoneNumber }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        // 用戶確認，繼續註冊流程
+        this.proceedWithRegistration();
+      }
+      // 如果 result === false，什麼都不做，讓用戶修改手機號
+    });
+  }
+
+  /**
+   * 繼續進行註冊流程
+   */
+  private proceedWithRegistration(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    const formData: RegisterFormData = this.registerForm.value;
+
+    this.registerService.sendRegistrationData(formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          if (response.success && response.data) {
+            this.currentStep = 2;
+            this.successMessage = response.message;
+            this.startOtpCountdown(response.data.countdown);
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.errorMessage = error.message || '發送驗證碼失敗，請稍後再試';
+        }
+      });
   }
 
   /**
@@ -359,7 +372,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
    * 開始 OTP 倒數計時
    */
   private startOtpCountdown(seconds: number): void {
-    this.otpCountdown = seconds;
+    this.otpCountdown = 300; // 固定5分鐘
     this.canResendOtp = false;
     this.clearCountdownTimer();
 
@@ -489,9 +502,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
     const remainingSeconds = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
+
   /**
- * 回到上一頁 - 使用瀏覽器歷史記錄
- */
+   * 回到上一頁 - 使用瀏覽器歷史記錄
+   */
   goBack(): void {
     // 檢查是否有上一頁歷史記錄
     if (window.history.length > 1) {
@@ -503,8 +517,8 @@ export class RegisterComponent implements OnInit, OnDestroy {
   }
 
   /**
-     * 載入縣市列表
-     */
+   * 載入縣市列表
+   */
   private loadCities(): void {
     this.isLoadingCities = true;
 
@@ -575,7 +589,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
           this.currentDistricts = [];
         }
       });
-
   }
 
   /**
