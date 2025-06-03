@@ -1,0 +1,213 @@
+<!-- 基本資料輸入表單 -->
+<div class="bg-white p-8 rounded-lg shadow-sm">
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
+    <!-- 會員資料區塊 -->
+    <div class="mb-8">
+      <h3 class="bg-blue-50 text-blue-800 p-3 -m-8 mb-6 rounded-t-lg text-lg font-semibold border-b border-blue-200">
+        會員資料</h3>
+
+      <!-- 身分證字號 -->
+      <div class="mb-5">
+        <label for="idNumber" class="block mb-2 font-semibold text-gray-700 text-sm">
+          身分證字號 <span class="text-red-500 font-bold">*</span>
+        </label>
+        <input type="text" id="idNumber" formControlName="idNumber"
+          class="w-full px-4 py-3 border-2 border-gray-200 rounded-md text-base transition-all duration-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          [class.border-red-500]="hasError('idNumber')" [class.ring-red-100]="hasError('idNumber')"
+          placeholder="請輸入身分證字號" maxlength="10">
+        @if (hasError('idNumber')) {
+        <div class="text-red-500 text-sm mt-1 font-medium flex items-center gap-1">
+          <span>⚠</span>
+          {{ getErrorMessage('idNumber') }}
+        </div>
+        }
+      </div>
+
+      <!-- 姓名 -->
+      <div class="mb-5">
+        <label for="name" class="block mb-2 font-semibold text-gray-700 text-sm">
+          姓名 <span class="text-red-500 font-bold">*</span>
+        </label>
+        <input type="text" id="name" formControlName="name"
+          class="w-full px-4 py-3 border-2 border-gray-200 rounded-md text-base transition-all duration-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          [class.border-red-500]="hasError('name')" [class.ring-red-100]="hasError('name')" placeholder="請輸入真實姓名"
+          maxlength="20">
+        @if (hasError('name')) {
+        <div class="text-red-500 text-sm mt-1 font-medium flex items-center gap-1">
+          <span>⚠</span>
+          {{ getErrorMessage('name') }}
+        </div>
+        }
+      </div>
+
+      <!-- 生日 -->
+      <div class="mb-5">
+        <label class="block mb-2 font-semibold text-gray-700 text-sm">
+          生日 <span class="text-red-500 font-bold">*</span>
+        </label>
+        <div class="grid grid-cols-3 gap-2" formGroupName="birthDate">
+          <select formControlName="year"
+            class="px-4 py-3 border-2 border-gray-200 rounded-md text-base transition-all duration-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            [class.border-red-500]="hasError('birthDate.year')" [class.ring-red-100]="hasError('birthDate.year')"
+            (change)="onDateChange()">
+            <option value="">年</option>
+            @for (year of years; track year) {
+            <option [value]="year">{{ year }}</option>
+            }
+          </select>
+
+          <select formControlName="month"
+            class="px-4 py-3 border-2 border-gray-200 rounded-md text-base transition-all duration-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            [class.border-red-500]="hasError('birthDate.month')" [class.ring-red-100]="hasError('birthDate.month')"
+            (change)="onDateChange()">
+            <option value="">月</option>
+            @for (month of months; track month) {
+            <option [value]="month">{{ month }}</option>
+            }
+          </select>
+
+          <select formControlName="day"
+            class="px-4 py-3 border-2 border-gray-200 rounded-md text-base transition-all duration-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            [class.border-red-500]="hasError('birthDate.day')" [class.ring-red-100]="hasError('birthDate.day')">
+            <option value="">日</option>
+            @for (day of days; track day) {
+            <option [value]="day">{{ day }}</option>
+            }
+          </select>
+        </div>
+        <div class="text-gray-500 text-sm mt-1 italic">※需年滿18歲方可註冊會員</div>
+        @if (registerForm.get('birthDate')?.invalid && registerForm.get('birthDate')?.touched) {
+        <div class="text-red-500 text-sm mt-1 font-medium flex items-center gap-1">
+          <span>⚠</span>
+          {{ getErrorMessage('birthDate') }}
+        </div>
+        }
+      </div>
+
+      <!-- 地址 -->
+      <div class="mb-5">
+        <label class="block mb-2 font-semibold text-gray-700 text-sm">
+          地址 <span class="text-red-500 font-bold">*</span>
+        </label>
+        <div class="grid grid-cols-2 gap-2 mb-2" formGroupName="address">
+          <!-- 縣市 -->
+          <select formControlName="city"
+            class="px-4 py-3 border-2 border-gray-200 rounded-md text-base transition-all duration-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            [class.border-red-500]="hasError('address.city')" [class.ring-red-100]="hasError('address.city')"
+            (change)="onCityChange()">
+            <option value="">
+              {{ isLoadingCities ? '載入中...' : '縣市' }}
+            </option>
+            @for (city of cities; track city) {
+            <option [value]="city">{{ city }}</option>
+            }
+          </select>
+
+          <!-- 鄉鎮市區 -->
+          <select formControlName="district"
+            class="px-4 py-3 border-2 border-gray-200 rounded-md text-base transition-all duration-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            [class.border-red-500]="hasError('address.district')" [class.ring-red-100]="hasError('address.district')">
+            <option value="">
+              {{ isLoadingDistricts ? '載入中...' : '鄉鎮市區' }}
+            </option>
+            @for (district of getCurrentDistricts(); track district) {
+            <option [value]="district">{{ district }}</option>
+            }
+          </select>
+
+          <!-- 詳細地址 -->
+          <input type="text" formControlName="detail"
+            class="w-full px-4 py-3 border-2 border-gray-200 rounded-md text-base transition-all duration-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 mt-2 col-span-2"
+            [class.border-red-500]="hasError('address.detail')" [class.ring-red-100]="hasError('address.detail')"
+            placeholder="請輸入詳細地址" maxlength="20">
+
+          <!-- 錯誤訊息顯示區域 -->
+          @if (hasError('address.city')) {
+          <div class="text-red-500 text-sm mt-1 font-medium flex items-center gap-1">
+            <span>⚠</span>
+            {{ getErrorMessage('address.city') }}
+          </div>
+          }
+          @if (hasError('address.district')) {
+          <div class="text-red-500 text-sm mt-1 font-medium flex items-center gap-1">
+            <span>⚠</span>
+            {{ getErrorMessage('address.district') }}
+          </div>
+          }
+          @if (hasError('address.detail')) {
+          <div class="text-red-500 text-sm mt-1 font-medium flex items-center gap-1">
+            <span>⚠</span>
+            {{ getErrorMessage('address.detail') }}
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- 手機號碼 -->
+      <div class="mb-5">
+        <label for="phoneNumber" class="block mb-2 font-semibold text-gray-700 text-sm">
+          手機號碼 <span class="text-red-500 font-bold">*</span>
+        </label>
+        <input type="tel" id="phoneNumber" formControlName="phoneNumber"
+          class="w-full px-4 py-3 border-2 border-gray-200 rounded-md text-base transition-all duration-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          [class.border-red-500]="hasError('phoneNumber')" [class.ring-red-100]="hasError('phoneNumber')"
+          placeholder="09xxxxxxxx" maxlength="10">
+        @if (hasError('phoneNumber')) {
+        <div class="text-red-500 text-sm mt-1 font-medium flex items-center gap-1">
+          <span>⚠</span>
+          {{ getErrorMessage('phoneNumber') }}
+        </div>
+        }
+      </div>
+
+      <!-- 電子信箱 -->
+      <div class="mb-5">
+        <label for="email" class="block mb-2 font-semibold text-gray-700 text-sm">
+          電子信箱 <span class="text-red-500 font-bold">*</span>
+        </label>
+        <input type="email" id="email" formControlName="email"
+          class="w-full px-4 py-3 border-2 border-gray-200 rounded-md text-base transition-all duration-300 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          [class.border-red-500]="hasError('email')" [class.ring-red-100]="hasError('email')"
+          placeholder="example@email.com" maxlength="50">
+        @if (hasError('email')) {
+        <div class="text-red-500 text-sm mt-1 font-medium flex items-center gap-1">
+          <span>⚠</span>
+          {{ getErrorMessage('email') }}
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- 錯誤訊息顯示 -->
+    @if (registrationState.errors().length > 0) {
+    <div class="bg-red-50 text-red-700 p-4 rounded-md mb-5 font-medium border border-red-200">
+      @for (error of registrationState.errors(); track error) {
+      <div>{{ error }}</div>
+      }
+    </div>
+    }
+
+    <!-- 操作按鈕 -->
+    <div class="flex justify-between items-center mt-8 pt-5 border-t border-gray-200">
+      <button type="button"
+        class="px-8 py-3 bg-white text-blue-500 border-2 border-blue-500 rounded-md text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-gray-300"
+        (click)="goBack()">
+        上一步
+      </button>
+
+      <div class="flex gap-3">
+
+        <!-- 下一步按鈕 -->
+        <button type="submit"
+          class="px-8 py-3 bg-blue-500 text-white rounded-md text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-blue-600 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center gap-2 focus:outline-none focus:ring-4 focus:ring-blue-300"
+          [disabled]="registrationState.isLoading()">
+          @if (registrationState.isLoading()) {
+          <span class="w-4 h-4 border-2 border-transparent border-t-current rounded-full animate-spin"></span>
+          }
+          {{ registrationState.isLoading() ? '處理中...' : '下一步' }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

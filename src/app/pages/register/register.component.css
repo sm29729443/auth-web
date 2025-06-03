@@ -1,17 +1,17 @@
-/* 自訂動畫 - Tailwind 沒有的 */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+/* RegisterComponent 容器樣式 */
+
+/* 步驟指示器動畫 */
+.step-indicator {
+  transition: all 0.3s ease-in-out;
 }
 
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
-}
-
-/* 響應 reduced-motion 偏好 */
-@media (prefers-reduced-motion: reduce) {
-  .animate-shake {
-    animation: none;
+/* 響應式設計 */
+@media (max-width: 640px) {
+  .step-container {
+    gap: 1rem;
+  }
+  
+  .step-separator {
+    width: 2rem;
   }
 }

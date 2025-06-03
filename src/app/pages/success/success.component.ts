@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { RegistrationStateService } from '../../services/registration-state.service';
 
 /**
  * 註冊成功頁面組件
@@ -117,10 +118,14 @@ import { Router } from '@angular/router';
 })
 export class SuccessComponent implements OnInit {
 
+  private registrationState = inject(RegistrationStateService);
+
   constructor(private router: Router) {}
 
   ngOnInit(): void {
-    // 頁面載入時的額外邏輯
+    // 清理註冊狀態，避免數據殘留
+    this.registrationState.clearAll();
+    console.log('✅ Registration state cleared on success page');
   }
 
   /**

@@ -1,0 +1,598 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+
+import { RegisterService } from '../../services/register.service';
+import { RegisterFormData, OtpVerifyData } from '../../models/register.model';
+import { CustomValidators } from '../../validators/custom-validators';
+import { PhoneConfirmDialogComponent } from '../../components/phone-confirm-dialog/phone-confirm-dialog.component';
+import { TokenService } from '../../services/token.service';
+
+/**
+ * 註冊主組件 - 包含兩個步驟：基本資料輸入和 OTP 驗證
+ * 使用 Angular 19 新語法
+ */
+@Component({
+  selector: 'app-register',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './register.component.html',
+  styleUrl: './register.component.css'
+})
+export class RegisterComponent implements OnInit, OnDestroy {
+
+  /** 目前步驟 (1: 基本資料, 2: OTP驗證) */
+  currentStep: number = 1;
+
+  /** 基本資料表單 */
+  registerForm!: FormGroup;
+
+  /** OTP 驗證表單 */
+  otpForm!: FormGroup;
+
+  /** 載入狀態 */
+  isLoading = false;
+
+  /** 錯誤訊息 */
+  errorMessage = '';
+
+  /** 成功訊息 */
+  successMessage = '';
+
+  /** OTP 倒數計時 */
+  otpCountdown = 1;
+
+  /** 倒數計時器 */
+  private countdownTimer?: number;
+
+  /** 是否可以重新發送 OTP */
+  canResendOtp = false;
+
+  /** 是否已嘗試提交表單 */
+  isFormSubmitted = false;
+
+  /** 年份選項 */
+  years: string[] = [];
+
+  /** 月份選項 */
+  months: string[] = [];
+
+  /** 日期選項 */
+  days: string[] = [];
+
+  /** 縣市載入狀態 */
+  isLoadingCities = false;
+
+  /** 區域載入狀態 */
+  isLoadingDistricts = false;
+
+  /** 縣市選項 */
+  cities = [
+    '台北市', '新北市', '桃園市', '台中市', '台南市', '高雄市',
+    '新竹縣', '苗栗縣', '彰化縣', '南投縣', '雲林縣', '嘉義縣',
+    '屏東縣', '宜蘭縣', '花蓮縣', '台東縣', '澎湖縣', '金門縣', '連江縣',
+    '基隆市', '新竹市', '嘉義市'
+  ];
+
+  /** 區域選項 - 改為動態載入 */
+  currentDistricts: string[] = [];
+
+  /** 銷毀訂閱 */
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private fb: FormBuilder,
+    private registerService: RegisterService,
+    public router: Router,
+    private route: ActivatedRoute,
+    private dialog: MatDialog,
+    private tokenService: TokenService
+  ) {
+    this.initializeDateOptions();
+  }
+
+  ngOnInit(): void {
+    this.initializeForms();
+    this.loadCities();
+    
+    // 檢查是否有 token（main.ts 已經處理了 URL 提取）
+    this.checkTokenAvailability();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.clearCountdownTimer();
+  }
+
+  /**
+   * 初始化表單
+   */
+  private initializeForms(): void {
+    // 基本資料表單
+    this.registerForm = this.fb.group({
+      idNumber: ['', [
+        Validators.required,
+        CustomValidators.taiwanId()
+      ]],
+      name: ['', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(20)
+      ]],
+      birthDate: this.fb.group({
+        year: ['', Validators.required],
+        month: ['', Validators.required],
+        day: ['', Validators.required]
+      }, { validators: CustomValidators.minimumAge(18) }),
+      address: this.fb.group({
+        city: ['', Validators.required], // 改為 null 而不是空字串
+        district: ['', Validators.required],
+        detail: ['', [
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(20)
+        ]]
+      }),
+      phoneNumber: ['', [
+        Validators.required,
+        CustomValidators.taiwanPhone()
+      ]],
+      email: ['', [
+        Validators.required,
+        Validators.email
+      ]]
+    });
+
+    // OTP 驗證表單
+    this.otpForm = this.fb.group({
+      otpCode: ['', [
+        Validators.required,
+        CustomValidators.otpCode(6)
+      ]]
+    });
+  }
+
+  /**
+   * 初始化日期選項
+   */
+  private initializeDateOptions(): void {
+    const currentYear = new Date().getFullYear();
+
+    // 生成年份選項 (目前年份往前100年)
+    for (let year = currentYear; year >= currentYear - 100; year--) {
+      this.years.push(year.toString());
+    }
+
+    // 生成月份選項
+    for (let month = 1; month <= 12; month++) {
+      this.months.push(month.toString().padStart(2, '0'));
+    }
+
+    // 生成日期選項 (預設31天，後續根據年月動態調整)
+    for (let day = 1; day <= 31; day++) {
+      this.days.push(day.toString().padStart(2, '0'));
+    }
+  }
+
+  /**
+   * 檢查 token 可用性（token 已由 main.ts 處理）
+   */
+  private checkTokenAvailability(): void {
+    const hasToken = this.tokenService.hasToken();
+    
+    if (hasToken) {
+      console.log('✅ Token available in RegisterComponent');
+      
+      // 可選：驗證 scope 是否為 AUTH（根據您的業務邏輯）
+      if (this.tokenService.isValidAuthScope()) {
+        console.log('✅ Token scope is valid for AUTH');
+      } else {
+        console.warn('⚠️ Token scope is not AUTH');
+      }
+    } else {
+      console.warn('⚠️ No token found - registration may fail');
+      // 可選：顯示警告給用戶
+      // this.errorMessage = '缺少驗證 token，請確認從正確的平台進入';
+    }
+  }
+
+  /**
+   * 當年份或月份改變時，動態調整日期選項
+   */
+  onDateChange(): void {
+    const birthDateGroup = this.registerForm.get('birthDate');
+    const year = birthDateGroup?.get('year')?.value;
+    const month = birthDateGroup?.get('month')?.value;
+
+    if (year && month) {
+      const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+      this.days = [];
+      for (let day = 1; day <= daysInMonth; day++) {
+        this.days.push(day.toString().padStart(2, '0'));
+      }
+
+      const currentDay = birthDateGroup?.get('day')?.value;
+      if (currentDay && parseInt(currentDay) > daysInMonth) {
+        birthDateGroup?.get('day')?.setValue('');
+      }
+    }
+  }
+
+  /**
+   * 進入下一步驟 - 發送 OTP
+   */
+  nextStep(): void {
+    this.isFormSubmitted = true;
+
+    if (this.registerForm.valid) {
+      this.openPhoneConfirmDialog();
+    } else {
+      this.markFormGroupTouched(this.registerForm);
+    }
+  }
+
+  /**
+   * 開啟手機號碼確認對話框
+   */
+  private openPhoneConfirmDialog(): void {
+    const phoneNumber = this.registerForm.get('phoneNumber')?.value;
+
+    const dialogRef = this.dialog.open(PhoneConfirmDialogComponent, {
+      width: '400px',
+      disableClose: true,
+      data: { phoneNumber }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.proceedWithRegistration();
+      }
+    });
+  }
+
+  /**
+   * 繼續進行註冊流程
+   */
+  private proceedWithRegistration(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    const formData: RegisterFormData = this.registerForm.value;
+
+    this.registerService.sendRegistrationData(formData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          if (response.success && response.data) {
+            this.currentStep = 2;
+            this.successMessage = response.message;
+            this.startOtpCountdown(response.data.countdown);
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.errorMessage = error.message || '發送驗證碼失敗，請稍後再試';
+        }
+      });
+  }
+
+  /**
+   * 回到上一步驟
+   */
+  previousStep(): void {
+    this.currentStep = 1;
+    this.clearMessages();
+    this.clearCountdownTimer();
+  }
+
+  /**
+   * 完成註冊 - 驗證 OTP
+   */
+  completeRegistration(): void {
+    if (this.otpForm.valid && this.registerForm.valid) {
+      this.isLoading = true;
+      this.errorMessage = '';
+
+      const otpData: OtpVerifyData = {
+        otpCode: this.otpForm.get('otpCode')?.value,
+        phoneNumber: this.registerForm.get('phoneNumber')?.value
+      };
+
+      const formData: RegisterFormData = this.registerForm.value;
+
+      this.registerService.verifyOtpAndRegister(otpData, formData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            this.isLoading = false;
+            if (response.success && response.data) {
+              this.successMessage = response.message;
+
+              setTimeout(() => {
+              // 優先使用 token 中的 redirectUrl，其次是 API 回應中的 redirectUrl
+              const redirectUrl = this.tokenService.getRedirectUrlFromToken() 
+                                 || response.data?.redirectUrl 
+                               || '/success';
+              
+                console.log('🔄 Redirecting to:', redirectUrl);
+              this.router.navigate([redirectUrl]);
+            }, 2000);
+            }
+          },
+          error: (error) => {
+            this.isLoading = false;
+            this.errorMessage = error.message || '驗證失敗，請重新輸入驗證碼';
+          }
+        });
+    } else {
+      this.markFormGroupTouched(this.otpForm);
+    }
+  }
+
+  /**
+   * 重新發送 OTP
+   */
+  resendOtp(): void {
+    if (!this.canResendOtp) return;
+
+    this.isLoading = true;
+    const phoneNumber = this.registerForm.get('phoneNumber')?.value;
+
+    this.registerService.resendOtp(phoneNumber)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          if (response.success && response.data) {
+            this.successMessage = response.message;
+            this.startOtpCountdown(response.data.countdown);
+            this.otpForm.get('otpCode')?.setValue('');
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.errorMessage = error.message || '重新發送失敗，請稍後再試';
+        }
+      });
+  }
+
+  /**
+   * 開始 OTP 倒數計時
+   */
+  private startOtpCountdown(seconds: number): void {
+    this.otpCountdown = 300;
+    this.canResendOtp = false;
+    this.clearCountdownTimer();
+
+    this.countdownTimer = window.setInterval(() => {
+      this.otpCountdown--;
+
+      if (this.otpCountdown <= 0) {
+        this.canResendOtp = true;
+        this.clearCountdownTimer();
+      }
+    }, 1000);
+  }
+
+  /**
+   * 清除倒數計時器
+   */
+  private clearCountdownTimer(): void {
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = undefined;
+    }
+  }
+
+  /**
+   * 標記表單群組為已觸碰，以顯示驗證錯誤
+   */
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      control?.markAsTouched();
+
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      }
+    });
+  }
+
+  /**
+   * 清除訊息
+   */
+  private clearMessages(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  /**
+   * 取得表單控制項的錯誤訊息
+   */
+  getErrorMessage(controlName: string, formGroup: FormGroup = this.registerForm): string {
+    const control = formGroup.get(controlName);
+
+    if (control && control.invalid && control.touched) {
+      const errors = control.errors;
+
+      if (errors?.['required']) {
+        return this.getRequiredMessage(controlName);
+      }
+
+      if (errors?.['email']) {
+        return '電子信箱格式不正確';
+      }
+
+      if (errors?.['minlength']) {
+        return `最少需要 ${errors['minlength'].requiredLength} 個字元`;
+      }
+
+      if (errors?.['maxlength']) {
+        return `最多只能 ${errors['maxlength'].requiredLength} 個字元`;
+      }
+
+      if (errors?.['taiwanId']) {
+        return errors['taiwanId'].message;
+      }
+
+      if (errors?.['taiwanPhone']) {
+        return errors['taiwanPhone'].message;
+      }
+
+      if (errors?.['minimumAge']) {
+        return errors['minimumAge'].message;
+      }
+
+      if (errors?.['otpCode']) {
+        return errors['otpCode'].message;
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * 取得必填欄位的錯誤訊息
+   */
+  private getRequiredMessage(controlName: string): string {
+    const messages: { [key: string]: string } = {
+      'idNumber': '身分證字號為必填項目',
+      'name': '姓名為必填項目',
+      'birthDate.year': '出生年份為必填項目',
+      'birthDate.month': '出生月份為必填項目',
+      'birthDate.day': '出生日期為必填項目',
+      'address.city': '縣市為必填項目',
+      'address.district': '鄉鎮市區為必填項目',
+      'address.detail': '詳細地址為必填項目',
+      'phoneNumber': '手機號碼為必填項目',
+      'email': '電子信箱為必填項目',
+      'otpCode': '驗證碼為必填項目'
+    };
+
+    return messages[controlName] || '此欄位為必填項目';
+  }
+
+  /**
+   * 檢查表單控制項是否有錯誤且已被觸碰
+   */
+  hasError(controlName: string, formGroup: FormGroup = this.registerForm): boolean {
+    const control = formGroup.get(controlName);
+    return !!(control && control.invalid && (control.touched || this.isFormSubmitted));
+  }
+
+  /**
+   * 格式化倒數計時顯示
+   */
+  formatCountdown(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * 回到上一頁 - 使用瀏覽器歷史記錄
+   */
+  goBack(): void {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      this.router.navigate(['/']);
+    }
+  }
+
+  /**
+   * 載入縣市列表
+   */
+  private loadCities(): void {
+    this.isLoadingCities = true;
+    
+    // 控制縣市 select 的狀態
+    if (this.isLoadingCities) {
+      this.registerForm.get('address.city')?.disable();
+    }
+
+    this.registerService.getCities()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isLoadingCities = false;
+          this.registerForm.get('address.city')?.enable();
+          
+          if (response.success && response.data) {
+            this.cities = response.data;
+          } else {
+            console.error('載入縣市失敗:', response.message);
+            this.cities = ['台北市', '新北市'];
+          }
+        },
+        error: (error) => {
+          this.isLoadingCities = false;
+          this.registerForm.get('address.city')?.enable();
+          console.error('載入縣市發生錯誤:', error);
+          this.cities = ['台北市', '新北市', '桃園市', '台中市', '台南市', '高雄市'];
+        }
+      });
+  }
+
+  /**
+   * 當城市改變時，載入對應的區域選項
+   */
+  onCityChange(): void {
+    const city = this.registerForm.get('address.city')?.value;
+
+    if (city) {
+      this.registerForm.get('address.district')?.setValue('');
+      this.currentDistricts = [];
+      this.loadDistricts(city);
+    } else {
+      this.currentDistricts = [];
+      this.registerForm.get('address.district')?.setValue('');
+    }
+  }
+
+  /**
+   * 載入指定縣市的區域列表
+   */
+  private loadDistricts(cityName: string): void {
+    this.isLoadingDistricts = true;
+    
+    // 控制區域 select 的狀態
+    if (this.isLoadingDistricts) {
+      this.registerForm.get('address.district')?.disable();
+    }
+
+    this.registerService.getDistricts(cityName)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isLoadingDistricts = false;
+          this.registerForm.get('address.district')?.enable();
+          
+          if (response.success && response.data) {
+            this.currentDistricts = response.data;
+          } else {
+            console.error('載入區域失敗:', response.message);
+            this.currentDistricts = [];
+          }
+        },
+        error: (error) => {
+          this.isLoadingDistricts = false;
+          this.registerForm.get('address.district')?.enable();
+          console.error('載入區域發生錯誤:', error);
+          this.currentDistricts = [];
+        }
+      });
+  }
+
+  /**
+   * 取得目前選擇城市的區域列表
+   */
+  getCurrentDistricts(): string[] {
+    return ['測試區1', '測試區2', '測試區3']; // 這裡可以替換成實際的區域列表
+  }
+}

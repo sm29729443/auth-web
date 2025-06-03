@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-
 /* 中文字體設定 */
 html, body {
   height: 100%;
@@ -40,5 +39,5 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+

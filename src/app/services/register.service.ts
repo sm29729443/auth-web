@@ -19,7 +19,7 @@ import {
 export class RegisterService {
 
   /** API 基礎 URL */
-  private readonly apiUrl = 'http://localhost:8080/b2c-auth-api/api';
+  private readonly apiUrl = 'http://localhost:8080/b2c-auth-api/api/public/address';
 
   constructor(private http: HttpClient) { }
 
@@ -121,36 +121,36 @@ export class RegisterService {
    * @param idNumber 身分證字號
    * @returns 是否有效
    */
-  validateTaiwanId(idNumber: string): boolean {
-    if (!idNumber || !/^[A-Z][12][0-9]{8}$/.test(idNumber)) {
-      return false;
-    }
+  // validateTaiwanId(idNumber: string): boolean {
+  //   if (!idNumber || !/^[A-Z][12][0-9]{8}$/.test(idNumber)) {
+  //     return false;
+  //   }
 
-    const cityMapping: { [key: string]: number } = {
-      'A': 10, 'B': 11, 'C': 12, 'D': 13, 'E': 14, 'F': 15,
-      'G': 16, 'H': 17, 'I': 34, 'J': 18, 'K': 19, 'L': 20,
-      'M': 21, 'N': 22, 'O': 35, 'P': 23, 'Q': 24, 'R': 25,
-      'S': 26, 'T': 27, 'U': 28, 'V': 29, 'W': 32, 'X': 30,
-      'Y': 31, 'Z': 33
-    };
+  //   const cityMapping: { [key: string]: number } = {
+  //     'A': 10, 'B': 11, 'C': 12, 'D': 13, 'E': 14, 'F': 15,
+  //     'G': 16, 'H': 17, 'I': 34, 'J': 18, 'K': 19, 'L': 20,
+  //     'M': 21, 'N': 22, 'O': 35, 'P': 23, 'Q': 24, 'R': 25,
+  //     'S': 26, 'T': 27, 'U': 28, 'V': 29, 'W': 32, 'X': 30,
+  //     'Y': 31, 'Z': 33
+  //   };
 
-    const cityCode = cityMapping[idNumber[0]];
-    if (!cityCode) return false;
+  //   const cityCode = cityMapping[idNumber[0]];
+  //   if (!cityCode) return false;
 
-    const cityTens = Math.floor(cityCode / 10);
-    const cityOnes = cityCode % 10;
+  //   const cityTens = Math.floor(cityCode / 10);
+  //   const cityOnes = cityCode % 10;
 
-    let sum = cityTens * 1 + cityOnes * 9;
+  //   let sum = cityTens * 1 + cityOnes * 9;
 
-    for (let i = 1; i < 9; i++) {
-      sum += parseInt(idNumber[i]) * (9 - i);
-    }
+  //   for (let i = 1; i < 9; i++) {
+  //     sum += parseInt(idNumber[i]) * (9 - i);
+  //   }
 
-    const remainder = sum % 10;
-    const expectedCheckDigit = remainder === 0 ? 0 : 10 - remainder;
+  //   const remainder = sum % 10;
+  //   const expectedCheckDigit = remainder === 0 ? 0 : 10 - remainder;
 
-    return expectedCheckDigit === parseInt(idNumber[9]);
-  }
+  //   return expectedCheckDigit === parseInt(idNumber[9]);
+  // }
 
   /**
    * 驗證台灣手機號碼

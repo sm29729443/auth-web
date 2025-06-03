@@ -1,1 +1,92 @@
-<p>error works!</p>
+<div class="max-w-2xl mx-auto p-8 text-center min-h-screen flex items-center justify-center">
+  <div class="bg-white rounded-lg shadow-lg p-8 border">
+    <!-- 錯誤圖示和標題 -->
+    <div class="text-6xl mb-4">
+      {{ getErrorIcon() }}
+    </div>
+    
+    <h1 class="text-3xl font-bold mb-4" 
+        [class.text-red-600]="errorType === 'access_denied'"
+        [class.text-yellow-600]="errorType !== 'access_denied'">
+      {{ getErrorTitle() }}
+    </h1>
+    
+    <!-- 錯誤訊息 -->
+    <div class="text-lg mb-6 text-gray-700">
+      {{ errorMessage }}
+    </div>
+    
+    <!-- 訪問被拒絕的特殊說明 -->
+    @if (errorType === 'access_denied') {
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6 text-left">
+      <h3 class="text-blue-800 font-semibold mb-3 flex items-center gap-2">
+        💡 如何正確進入系統？
+      </h3>
+      <ul class="text-blue-700 space-y-2 text-sm">
+        <li class="flex items-start gap-2">
+          <span class="text-blue-500 font-bold">1.</span>
+          <span>請確認從<strong>正確的平台或系統</strong>進入本驗證模組</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-blue-500 font-bold">2.</span>
+          <span>檢查提供的連結是否<strong>完整且未過期</strong></span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-blue-500 font-bold">3.</span>
+          <span>確認您有<strong>使用本驗證服務的權限</strong></span>
+        </li>
+        <li class="flex items-start gap-2">
+          <span class="text-blue-500 font-bold">4.</span>
+          <span>如問題持續，請聯繫<strong>系統管理員</strong>協助處理</span>
+        </li>
+      </ul>
+    </div>
+    
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+      <p class="text-yellow-800 text-sm">
+        <strong>提醒：</strong>本驗證模組僅供<span class="font-semibold text-yellow-900">授權的第三方平台</span>使用，
+        無法直接訪問。請通過正確的入口進入。
+      </p>
+    </div>
+    }
+    
+    <!-- 錯誤代碼（如果有） -->
+    @if (errorCode) {
+    <div class="text-gray-500 text-sm mb-6">
+      錯誤代碼: {{ errorCode }}
+    </div>
+    }
+    
+    <!-- 操作按鈕 -->
+    <div class="flex gap-4 justify-center">
+      <button 
+        (click)="goBack()" 
+        class="bg-gray-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-600 transition-colors duration-300 flex items-center gap-2">
+        <span>←</span>
+        返回上一頁
+      </button>
+      
+      @if (errorType === 'access_denied') {
+      <a 
+        href="mailto:support@company.com?subject=驗證系統訪問問題&body=錯誤代碼: {{ errorCode }}%0A錯誤訊息: {{ errorMessage }}"
+        class="bg-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors duration-300 flex items-center gap-2">
+        <span>📧</span>
+        聯繫客服
+      </a>
+      }
+    </div>
+    
+    <!-- 技術資訊（可選，開發階段顯示） -->
+    @if (errorCode) {
+    <details class="mt-6 text-left">
+      <summary class="cursor-pointer text-gray-500 text-sm hover:text-gray-700">技術詳情</summary>
+      <div class="mt-2 p-3 bg-gray-50 rounded text-xs text-gray-600 font-mono">
+        <div><strong>錯誤類型:</strong> {{ errorType }}</div>
+        <div><strong>錯誤代碼:</strong> {{ errorCode }}</div>
+        <div><strong>時間戳記:</strong> {{ getCurrentTimestamp() }}</div>
+        <div><strong>當前路徑:</strong> {{ getCurrentPath() }}</div>
+      </div>
+    </details>
+    }
+  </div>
+</div>

@@ -24,6 +24,18 @@ export interface RegisterFormData {
   phoneNumber: string;
   /** 電子信箱 */
   email: string;
+  
+  // 🆕 新增步驟控制相關屬性
+  /** 步驟1是否完成 */
+  step1Completed?: boolean;
+  /** 步驟1完成時間 */
+  step1CompletedAt?: string;
+  /** 步驟2是否完成 */
+  step2Completed?: boolean;
+  /** 步驟2完成時間 */
+  step2CompletedAt?: string;
+  /** OTP驗證碼 */
+  otpCode?: string;
 }
 
 /** OTP 驗證資料 */
